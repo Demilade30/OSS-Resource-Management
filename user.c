@@ -31,7 +31,7 @@ struct resources {
 };
 
 int errno;
-int index;
+int position;
 int *shmChild;
 int *shmTerminate;
 char errmsg[200];
@@ -44,16 +44,16 @@ sem_t *semChild;
 
 void intSigHandler(int sigNumber){
 	int i;
-	snprintf(errmsg, sizeof(errmsg), "user %d: caught sigint, killing process #%d", pid, index);
+	snprintf(errmsg, sizeof(errmsg), "user %d: caught sigint, killing process #%d", pid, position);
 	perror(errmsg);
 
 	for(i = 0; i < 20; i++){
-	shmResources[i].releaseArray[index] = shmResources[i].allocationArray[index];
-	shmResources[i].requestArray[index] = 0;
+	shmResources[i].releaseArray[position] = shmResources[i].allocationArray[position];
+	shmResources[i].requestArray[position] = 0;
 }
 
 	sem_wait(semTerminate);
-	shmTerminate[index] = 1;
+	shmTerminate[position] = 1;
 	shmTerminate[19]++;
 	sem_post(semTerminate);
 	sem_post(semDead);
