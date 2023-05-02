@@ -41,3 +41,44 @@ pid_t pid;
 sem_t *semDead;
 sem_t *semTerminate;
 sem_t *semChild;
+
+void intSigHandler(int sigNumber){
+	int i;
+	snprintf(errmsg, sizeof(errmsg), "user %d: caught sigint, killing process #%d", pid, index);
+	perror(errmsg);
+
+	for(i = 0; i < 20; i++){
+	shmResources[i].releaseArray[index] = shmResources[i].allocationArray[index];
+	shmResources[i].requestArray[index] = 0;
+}
+
+	sem_wait(semTerminate);
+	shmTerminate[index] = 1;
+	shmTerminate[19]++;
+	sem_post(semTerminate);
+	sem_post(semDead);
+
+	errno = shmdt(shmTime);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user %d: shmdt(shmTime)", pid);
+		perror(errmsg);
+}
+	errno = shmdt(shmChild);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user %d: shmdt(shmChild)", pid);
+		perror(errmsg);
+} 
+	errno = shmdt(shmTerminate);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user %d: shmdt(shmTerm)", pid);
+		perror(errmsg);
+}
+	errno = shmdt(shmResources);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user %d: shmdt(shmResources)", pid);
+		perror(errmsg);
+}
+	exit(sigNumber);
+}
+
+
