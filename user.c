@@ -42,7 +42,7 @@ sem_t *semDead;
 sem_t *semTerminate;
 sem_t *semChild;
 
-void intSigHandler(int sigNumber){
+void intSignalHandler(int sigNumber){
 	int i;
 	snprintf(errmsg, sizeof(errmsg), "user %d: caught sigint, killing process #%d", pid, position);
 	perror(errmsg);
@@ -81,4 +81,59 @@ void intSigHandler(int sigNumber){
 	exit(sigNumber);
 }
 
+int main(int argc, char *argv[]){
+	int i;
+	int j;
+	int terminate = 0;
+	int timeKey = atoi(argv[1]);
+	int childKey = atoi(argv[2]);
+	int index = atoi(argv[3]);
+	int terminateKey = atoi(argv[4]);
+	int resourceKey = atoi(argv[5]);
+	unsigned int nextResource;
+	struct timer terminateTime;
+	struct timer initTime;
+	signal(SIGINT, intSignalHandler);
+	pid = getpid();
+	key_t keyTime = 8675;
+	key_t keyChild = 5309;
+	key_t keyTerminate = 1138;
+	key_t keyResource = 8311;
+	position = index;
 
+	//random number generator	
+	srand(pid *time(NULL));
+
+	//attach memory
+	//point shmTime to shared memory
+	shmTime = shmat(timeKey, NULL, 0);
+	if((void *)shmTime == (void *)-1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmat(shmIDTime)");
+		perror(errmsg);
+		exit(1);
+}
+	//point shmChild to shared memory
+	shmChild = shmat(childKey, NULL, 0);
+	if((void *)shmChild == (void *)-1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmat(shmIDChild)");
+		perror(errmsg);
+		exit(1);		
+}
+	//point shmTerminate to shared memory
+	shmTerminate = shmat(terminateKey, NULL, 0);
+	if((void *)shmTerminate == (void *)-1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmat(shmIDTerminate)");
+		perror(errmsg);
+		exit(1);	
+}
+	//point shmResources to shared memory
+	shmResources = shmat(resourceKey, NULL, 0);
+	if ((void *)shmRes == (void *)-1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmat(shmIDResources)");
+		perror(errmsg);
+    		exit(1);
+}
+	//create a semaphore
+	//open semaphore
+	
+}
