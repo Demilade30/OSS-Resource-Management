@@ -128,12 +128,108 @@ int main(int argc, char *argv[]){
 }
 	//point shmResources to shared memory
 	shmResources = shmat(resourceKey, NULL, 0);
-	if ((void *)shmRes == (void *)-1){
+	if((void *)shmRes == (void *)-1){
 		snprintf(errmsg, sizeof(errmsg), "user: shmat(shmIDResources)");
 		perror(errmsg);
     		exit(1);
 }
 	//create a semaphore
 	//open semaphore
-	
+	semDead = sem_open("semDead", 1);
+	if(semDead == SEM_FAILED){
+		snprintf(errmsg, sizeof(errmsg), "user %d: sem_open(semDead)", pid);
+		perror(errmsg);
+    		exit(1);
+}
+	semTerminate = sem_open("semTerminate", 1);
+	if(semTerminate == SEM_FAILED){
+		snprintf(errmsg, sizeof(errmsg), "user %d: sem_open(semTerminate)", pid);
+		perror(errmsg);
+    		exit(1);
+}	
+	semChild = sem_open("semChild", 1);
+	if(semTerminate == SEM_FAILED){
+		snprintf(errmsg, sizeof(errmsg), "user %d: sem_open(semChild)", pid);
+		perror(errmsg);
+    		exit(1);
+}
+	//calculate the first request and release times
+	initTime.seconds = shmTime -> seconds;
+	initTime.nanoseconds = shmTime -> nanoseconds + rand() % (bounds);
+	if(initTime.nanoseconds > 1000000000){
+		initTime.seconds += 1;
+		initTime.nanoseconds -= 1000000000;
+}
+	while(!terminate){
+		if(rand() % 100 <= margin){
+			terminate = 1;
+}
+		//calculate termination time
+		terminationTime.seconds = shmTime -> seconds;
+		terminationTime.nanoseconds = shmTime -> nanoseconds + rand() % 250000000;
+		if(terminationTime.nanoseconds > 1000000000){
+			terminationTime.nanoseconds -= 1000000000;
+			terminationTime.seconds += 1;
+}
+		if(initTime.seconds <= shmTime -> seconds){
+			if(initTime.nanoseconds <= shmTime -> nanoseconds || initTime.seconds < shmTime -> seconds){
+				//enter critical section
+				nextResource = rand() % 20;
+				if(shmResources[nextResource].allocationArray[index] == 0){
+					shmResources[nextResource].requestArray[index]++;
+					while(shmResources[nextResource].requestArray[index]);
+}
+				else{
+					if(rand() % 10){
+						shmResources[nextResource].requestArray[index]++;
+						while(shmResources[nextResource].requestArray[index]);
+}
+					else{
+						shmResources[nextResource].releaseArray[index] = shmResources[nextResource].allocationArray[index];
+}
+}
+				//calculate next request/release time
+				initTime.seconds = shmTime -> seconds;
+				initTime.nanoseconds = shmTime -> nanoseconds + rand() % (bounds);
+				if(initTime.nanoseconds > 1000000000){
+					initTime.nanoseconds -= 1000000000;
+					initTime.seconds += 1;
+}
+}
+}
+		//wait for system clock to pass time
+		while(terminationTime.seconds > shmTime -> seconds);
+		while(terminationTime.nanoseconds > shmTime -> nanoseconds);
+}
+	//signal release of process from running process
+	sem_wait(semTerminate);
+	shmTerminate[index] = 1;
+	sem_post(semTerminate);
+	snprintf(errmsg, sizeof(errmsg), "user %d: process terminating", pid);
+	perror(errmsg);
+	sem_post(semDead);
+
+	//detach memory
+	errno = shmdt(shmTime);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmdt(shmTime)");
+		perror(errmsg);
+}
+	errno = shmdt(shmChild);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmdt(shmChild)");
+		perror(errmsg);
+}
+	errno = shmdt(shmTerminate);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmdt(shmTerminate)");
+		perror(errmsg);
+}
+	errno = shmdt(shmResources);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "user: shmdt(shmResources)");
+		perror(errmsg);
+}
+	exit(0);
+	return 0;
 }
