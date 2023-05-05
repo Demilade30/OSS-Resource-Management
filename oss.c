@@ -70,6 +70,29 @@ void intSignalHandler(int sigNumber){
 		snprintf(errmsg, sizeof(errmsg), "oss: shmdt(shmChild)");
 		perror(errmsg);	
 }
-
-	
+	errno = shmctl(shmIDChild, IPC_RMID, NULL);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "oss: shmctl(shmIDChild)");
+		perror(errmsg);
+}	
+	errno = shmdt(shmTerminate);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "oss: shmdt(shmTerminate)");
+		perror(errmsg);	
+}	
+	errno = shmctl(shmIDTerminate, IPC_RMID, NULL);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "oss: shmctl(shmIDTerminate)");
+		perror(errmsg);	
+}	
+	errno = shmdt(shmResources);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "OSS: shmdt(shmRes)");
+		perror(errmsg);	
+}
+	errno = shmctl(shmIDResources, IPC_RMID, NULL);
+	if(errno == -1){
+		snprintf(errmsg, sizeof(errmsg), "oss: shmctl(shmIDResources)");
+		perror(errmsg);
+}
 }
